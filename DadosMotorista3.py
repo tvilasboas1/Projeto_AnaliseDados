@@ -1,57 +1,81 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-# Carregar o arquivo CSV
-df = pd.read_csv('PlanilhaGanhosApp.csv', sep=',', decimal=',', quotechar='"')
+# Função para carregar e transformar os dados
+def carregar_dados(arquivo):
+    try:
+        # Carregar o arquivo CSV
+        df = pd.read_csv(arquivo, sep=',', decimal=',', thousands='.')
 
-# Converter as colunas relevantes para numérico
-for col in ['UBER', '99POP', 'OUTROS', 'TOTAL', 'GASTOS', 'LIQUIDO']:
-    df[col] = pd.to_numeric(df[col].str.replace(',', '.'), errors='coerce')
+        # Exibir o cabeçalho para verificação
+        print("Cabeçalho do arquivo:", df.columns.tolist())
 
-# Converta a coluna 'Fev22' para numérico, caso necessário
-df['Fev22'] = pd.to_numeric(df['Fev22'], errors='coerce')
+        # Remover a linha de total (última linha)
+        df = df.iloc[:-1]
 
-# Exibir as primeiras linhas do arquivo
-print(df.head())
+        # Renomear a primeira coluna para 'DIA'
+        df = df.rename(columns={df.columns[0]: 'DIA'})
 
-# Análise básica: Descrição estatística
-print(df.describe())
+        # Adicionar o nome do mês
+        df['Mês'] = 'Fev22'
 
-# Calcular e exibir os totais
-print(f"Total do valor Uber: {df['UBER'].sum():.2f}")
-print(f"Total do valor 99Pop: {df['99POP'].sum():.2f}")
-print(f"Total do valor Outros: {df['OUTROS'].sum():.2f}")
-print(f"Valor Total: {df['TOTAL'].sum():.2f}")
-print(f"Valor Gastos: {df['GASTOS'].sum():.2f}")
-print(f"Total do valor líquido: {df['LIQUIDO'].sum():.2f}")
+        # Converter os valores para numérico
+        for col in ['UBER', '99POP', 'OUTROS', 'TOTAL', 'GASTOS', 'Liquido']:
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace('.', '').str.replace(',', '.'), errors='coerce')
 
-# Remover linhas com valores NaN na coluna 'Fev22' para o gráfico
-df = df.dropna(subset=['Fev22'])
+        return df
+    except Exception as e:
+        print(f"Erro ao processar o arquivo {arquivo}: {e}")
+        return pd.DataFrame()  # Retorna um DataFrame vazio em caso de erro
 
-# Configuração do estilo do gráfico
-sns.set(style="whitegrid")
+# Função para plotar os gráficos
+def plotar_graficos(df):
+    if df.empty:
+        print("Nenhum dado disponível para plotar gráficos.")
+        return
 
-# Gráfico de barras para valores líquidos por 'Fev22'
-plt.figure(figsize=(10, 6))  # Ajusta o tamanho do gráfico
-plt.bar(df['Fev22'], df['LIQUIDO'], color='skyblue', edgecolor='black')
+    # Verificar as colunas do DataFrame antes de plotar
+    print(f"Colunas antes de plotar gráficos: {df.columns.tolist()}")
 
-# Adicionando uma linha de média
-mean_value = df['LIQUIDO'].mean()
-plt.axhline(mean_value, color='red', linestyle='--', label=f'Média: R$ {mean_value:.2f}')
+    # Gráfico de Linhas (Ganhos Líquidos por Dia)
+    plt.figure(figsize=(12, 6))
+    plt.plot(df['DIA'], df['Liquido'], marker='o', label='Fev22', color='blue')
+    plt.title('Ganhos Líquidos por Dia - Gráfico de Linhas')
+    plt.xlabel('Dia')
+    plt.ylabel('Ganho Líquido (R$)')
+    plt.legend()
+    plt.xticks(df['DIA'], rotation=45)  # Definir os ticks do eixo X como os dias
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
-# Título e rótulos
-plt.title('Valores Líquidos por Dia de Fevereiro', fontsize=16)
-plt.xlabel('Dia (Fev22)', fontsize=12)
-plt.ylabel('Líquido (R$)', fontsize=12)
+    # Gráfico de Barras (Comparação de Ganhos por Aplicativo)
+    plt.figure(figsize=(12, 6))
+    df[['UBER', '99POP', 'OUTROS']].sum().plot(kind='bar', color=['green', 'orange', 'red'])
+    plt.title('Comparação de Ganhos por Aplicativo')
+    plt.xlabel('Aplicativo')
+    plt.ylabel('Ganho Bruto (R$)')
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    plt.show()
 
-# Adicionar anotações nas barras
-for i, value in enumerate(df['LIQUIDO']):
-    plt.text(df['Fev22'].iloc[i], value + 5, f'R$ {value:.2f}', ha='center', va='bottom')
+    # Gráfico de Boxplot (Distribuição dos Ganhos Líquidos por Dia)
+    plt.figure(figsize=(12, 6))
+    df.boxplot(column='Liquido', by='DIA', grid=False)
+    plt.title('Distribuição dos Ganhos Líquidos por Dia')
+    plt.suptitle('')  # Remover título automático
+    plt.xlabel('Dia')
+    plt.ylabel('Ganho Líquido (R$)')
+    plt.xticks(rotation=45)  # Rotacionar os rótulos do eixo X para melhor visualização
+    plt.tight_layout()
+    plt.show()
 
-# Exibir legenda
-plt.legend()
+# Carregar os dados do arquivo
+arquivo = 'GanhosAppFev22_Beta.csv'  # Substitua pelo caminho correto do arquivo
+dados = carregar_dados(arquivo)
 
-# Mostrar gráfico
-plt.tight_layout()
-plt.show()
+# Exibir os primeiros dados para verificação
+print(dados.head())
+
+# Plotar os gráficos
+plotar_graficos(dados)

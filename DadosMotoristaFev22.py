@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Carregar o arquivo CSV
-df = pd.read_csv('PlanilhaGanhosApp.csv', sep=',', decimal=',', quotechar='"')
+df = pd.read_csv('PlanilhaGanhosAppFev22.csv', sep=',', decimal=',', quotechar='"')
 
 # Converter as colunas relevantes para numérico
 for col in ['UBER', '99POP', 'OUTROS', 'TOTAL', 'GASTOS', 'LIQUIDO']:
